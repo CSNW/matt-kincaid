@@ -2,26 +2,34 @@ import { english10000 } from './english10000';
 import { BoolMap, DictCache, DictNode } from './DictCache';
 import { measureExecutionTime } from './measureExecutionTime';
 
+// Encapsulate all the logic for the game of Boggle
 export class BoggleController {
-  public readonly DefaultBoard = "cato\nodog\nbrat\nnrab";
+  public static readonly BoardSize = 4;
+  public static readonly DefaultBoard = "cato\nodog\nbrat\nnrab";
 
-  board = this.DefaultBoard;
-  boardSize = 4;
+  // Board info
+  board = BoggleController.DefaultBoard; // active game board, expected to be boardSize*boardSize characters in row major order.
+
+  // Dictionary info
   dict = english10000;
-  results = "";
-  dictSize: string = "";
   cache: DictCache = null;
+  dictSize: string = "";
+
+  // Results info
+  results = "";
 
   init() {
     this.cacheDict();
     this.refreshResults();
   }
 
+  // Call this to randomize the game board and test for new results.
   randomize() {
-    this.board = BoggleController.generateRandomString(this.boardSize);
+    this.board = BoggleController.generateRandomString(BoggleController.BoardSize);
     this.refreshResults();
   }
 
+  // Call this after dict changes to cache the dictionary tree
   cacheDict() {
     let duration = measureExecutionTime(() => {
       this.cache = new DictCache(this.dict);
@@ -29,15 +37,16 @@ export class BoggleController {
     this.dictSize = `${Object.keys(this.cache.all).length} entries. ${duration.toFixed(2)}ms.`;
   }
 
+  // Analyze the board for new results.
   refreshResults() {
     let matches;
     let duration = measureExecutionTime(() => {
-      matches = BoggleController.boggle(this.board, this.cache);
+      matches = BoggleController.findBoggleMatches(this.board, this.cache);
     });
     this.results = JSON.stringify(Object.keys(matches as any).sort(), null, 4) + ` ${duration.toFixed(2)}ms.`;
   }
 
-  static boggle(board: string, cache: DictCache) {
+  static findBoggleMatches(board: string, cache: DictCache) {
     board = DictCache.allowOnlyAlphaNumeric(board).toLowerCase();
 
     if (board.length != 16) {
@@ -47,12 +56,13 @@ export class BoggleController {
     let matches = {};
 
     for (let a = 0; a < board.length; ++a) {
-      BoggleController.searchBoard(board, 4, [a], matches, cache.root);
+      BoggleController.searchBoard(board, BoggleController.BoardSize, [a], cache.root, matches);
     }
 
     return matches;
   }
 
+  // Generate a new square of random characters for the game board.
   static generateRandomString(size) {
     const characters = 'abcdefghijklmnopqrstuvwxyz';
     let result = '';
@@ -66,6 +76,8 @@ export class BoggleController {
     return result;
   }
 
+  // Generate a list of new board positions to search relative to my current board position
+  // positions are specified as indexes into the board array.
   static *makeSearches(i, size) {
     let x = i % size;
     let y = Math.floor(i / size);
@@ -79,17 +91,17 @@ export class BoggleController {
   }
 
   // Recursively traverses the board extending a word path following the Boggle rules.
-  static searchBoard(board: string, boardSize: number, path: number[], matches: BoolMap, cache: DictNode) {
+  static searchBoard(board: string, boardSize: number, path: number[], cache: DictNode, matchesOut: BoolMap) {
     // get the char from the board at the search position
     let i = path[path.length - 1];
     let key = board[i];
 
     // search
-    let n = cache.children[key];
+    let n = cache.children?.[key];
     if (n) {
       let val = n.value;
       if (val?.length > 2) { // boggle matches must be 3char or longer
-        matches[val] = true;
+        matchesOut[val] = true;
       }
 
       if (n.children) {
@@ -98,7 +110,7 @@ export class BoggleController {
         for (let newI of searches) {
           if (!path.includes(newI)) {
             // havent visited this yet
-            BoggleController.searchBoard(board, boardSize, [...path, newI], matches, n);
+            BoggleController.searchBoard(board, boardSize, [...path, newI], n, matchesOut);
           }
         }
       }

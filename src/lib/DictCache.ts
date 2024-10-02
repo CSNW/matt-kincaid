@@ -1,14 +1,21 @@
 
+// Dictionary tree structure to optimize incremental string searching.
 export class DictCache {
   root = new DictNode();
   all: BoolMap = {};
 
-  constructor(strVersion: string) {
-    let entries = strVersion
+  // strList is a \n separated list of words.
+  // all words will be converted to lowercase.
+  // non alpha - numeric characters will be removed.
+  constructor(strList: string) {
+    // split and sanitize word list
+    // TODO add more validation
+    let entries = strList
       .split("\n")
       .filter(f => f)
       .map(v => DictCache.allowOnlyAlphaNumeric(v).toLowerCase());
 
+    // insert each word into dictionary tree
     for (let e of entries) {
       this.root.insert(e, e, this.all);
     }
@@ -19,7 +26,8 @@ export class DictCache {
   }
 }
 
-
+// A node in the dictionary tree
+//  contains optionally children and/or leaf data (words)
 export class DictNode {
   children?
   value: string;

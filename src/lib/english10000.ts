@@ -1,3 +1,5 @@
+
+// Cached copy of: https://github.com/first20hours/google-10000-english/blob/master/google-10000-english.txt
 export const english10000 = `the
 of
 and

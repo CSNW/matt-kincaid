@@ -1,4 +1,14 @@
-# Getting Started with Create React App
+
+# Boggle Games Demo
+
+This project demonstrates a basic Typescript and React app published to Github pages.
+
+[Live Demo](https://mkjsdemo.github.io/games-demo).
+
+[Boggle Rules](https://en.wikipedia.org/wiki/Boggle#Rules).
+
+
+## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
